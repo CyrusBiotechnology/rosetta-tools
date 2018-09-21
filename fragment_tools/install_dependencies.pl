@@ -63,6 +63,7 @@ if ($overwrite || !-d "$Bin/blast/bin" || !-d "$Bin/blast/data") {
 	}
 	my $url = "https://cyrusbio.jfrog.io/cyrusbio/science/$package";
 	print "INSTALLING BLAST from $url ....\n";
+	print " $Bin/blast\n";
 	system("rm -rf blast") if (-d "blast");  # clean up interrupted attempts
 	system("wget --user $ENV{'ARTI_NAME'} --password $ENV{'ARTI_PASS'} -N $url");
 	system("tar -zxvf $package");
