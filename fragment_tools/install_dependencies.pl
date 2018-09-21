@@ -51,7 +51,7 @@ foreach my $arg (@ARGV) {
 chdir($Bin);
 
 # blast binaries
-# from fhttps://cyrusbio.jfrog.io/cyrusbio/science/blast-2.2.17-x64-linux.tar.gz
+# from https://cyrusbio.jfrog.io/cyrusbio/science/blast-2.2.17-x64-linux.tar.gz
 if ($overwrite || !-d "$Bin/blast/bin" || !-d "$Bin/blast/data") {
 	# try to figure out what package to install
 	my $package = "blast-2.2.17-ia32-linux.tar.gz";
@@ -64,7 +64,7 @@ if ($overwrite || !-d "$Bin/blast/bin" || !-d "$Bin/blast/data") {
 	my $url = "https://cyrusbio.jfrog.io/cyrusbio/science/$package";
 	print "INSTALLING BLAST from $url ....\n";
 	system("rm -rf blast") if (-d "blast");  # clean up interrupted attempts
-	system("wget -N $url");
+	system("wget --user $ARTI_NAME --password $ARTI_PASS -N $url");
 	system("tar -zxvf $package");
 	push(@packages_to_clean, "$Bin/$package");
 	system("mv blast-2.2.17 blast");
