@@ -3,6 +3,7 @@ kind: pipeline
 type: kubernetes
 name: default
 
+steps:
 - name: publish
   image: gcr.io/cyrus-containers/drone-plugins/gcr:linux-amd64
   privileged: true
