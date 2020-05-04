@@ -14,6 +14,5 @@ steps:
     - ${DRONE_COMMIT_BRANCH}
     - ${DRONE_COMMIT_BRANCH}-${DRONE_COMMIT_SHA}
     debug: true
-    dockerfile: Dockerfile
     json_key:
       from_secret: dockerconfigjson
