@@ -35,6 +35,9 @@ my $FRAGMENT_PICKER_NUM_CPUS = int($ENV{"FRAGMENT_PICKER_NUM_CPUS"}) || 8;    # 
 my $ROSETTA_DATABASE = $ENV{"ROSETTA_DATABASE"} || "$Bin/../../main/database"; # rosetta database
 my $VALL = $ENV{"VALL"} || "$Bin/vall.jul19.2011"; # template database
 
+# If provided, skip BLAST
+my $PSSM = $ENV{"PSSM"} || "";
+
 # BLAST path (Requires non-blast+ NCBI version)
 my $BLAST_DIR = $ENV{"BLAST_DIR"} || "$Bin/blast";
 my $BLAST_NUM_CPUS = int($ENV{"BLAST_NUM_CPUS"}) || 8;    # number of processors to use (blastpgp -a option)
@@ -122,6 +125,7 @@ $options{csbuild_profile} = 0;
 $options{psipredfile} = "";
 $options{samfile}     = "";
 $options{porterfile}  = "";
+$options{pssm}        = "";
 $options{psipred}     = 1;         # use psipred by default
 $options{porter}      = 0;         # skip porter by default
 $options{sam}         = 0;         # skip sam by default
@@ -442,8 +446,13 @@ if ($SPARKS) {
     }
 }
 
+# if PSSM file provided, skip running blast
+if ($options{pssm} && -s $options{pssm}) {
+  $options{runid}.pssm = $options{pssm}
+}
+
 # run blast
-unless ( &nonempty_file_exists("$options{runid}.check") ) {
+unless ( &nonempty_file_exists("$options{runid}.check") || ($options{pssm} && -s $options{pssm}) ) {
     print_debug("Running psiblast for sequence profile");
     print_debug("Using nr: $NR");
     if (
