@@ -376,6 +376,11 @@ if ( $abs_path_fasta ne abs_path("$options{rundir}/$options{fastafile}") ) {
 print "picking fragments with options:\n", options_to_str( \%options ), "\n";
 print_debug("FILENAME: $options{fastafile}");
 
+# if PSSM file provided, skip running blast
+if ( &nonempty_file_exists("$options{pssm}" ) {
+  $options{runid}.pssm = $options{pssm}
+}
+
 # main
 
 chdir( $options{rundir} );
@@ -425,8 +430,11 @@ if ($options{csbuild_profile}) {
   }
   close(F);
 
-  system("$PSIBLAST -i $options{fastafile} -B $blast -Q $options{runid}.pssm -t 1 -j 1 -h 0.001 -e 0.001 -b 0 -k 0 -d $placeholder");
-  (-s "$options{runid}.pssm") or die "ERROR! failed to create single sequence pssm file: blastpgp failed!\n";
+  unless ( &nonempty_file_exists( $options{fastafile}.pssm ) ) {
+      system("$PSIBLAST -i $options{fastafile} -B $blast -Q $options{runid}.pssm -t 1 -j 1 -h 0.001 -e 0.001 -b 0 -k 0 -d $placeholder");
+      (-s "$options{runid}.pssm") or die "ERROR! failed to create single sequence pssm file: blastpgp failed!\n";
+  }
+
   system("cp $options{runid}.pssm $options{fastafile}.pssm");
 }
 
@@ -447,12 +455,12 @@ if ($SPARKS) {
 }
 
 # if PSSM file provided, skip running blast
-if ($options{pssm} && -s $options{pssm}) {
+if ( &nonempty_file_exists("$options{pssm}" ) {
   $options{runid}.pssm = $options{pssm}
 }
 
 # run blast
-unless ( &nonempty_file_exists("$options{runid}.check") || ($options{pssm} && -s $options{pssm}) ) {
+unless ( &nonempty_file_exists("$options{runid}.check") || &nonempty_file_exists("$options{pssm}") ) {
     print_debug("Running psiblast for sequence profile");
     print_debug("Using nr: $NR");
     if (
