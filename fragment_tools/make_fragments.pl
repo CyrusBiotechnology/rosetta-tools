@@ -378,7 +378,7 @@ print_debug("FILENAME: $options{fastafile}");
 
 # if PSSM file provided, skip running blast
 if ( &nonempty_file_exists("$options{pssm}") ) {
-  $options{runid}.pssm = $options{pssm};
+  system("cp $options{pssm} $options{runid}.pssm");
 }
 
 # main
