@@ -458,7 +458,7 @@ if ($SPARKS) {
 
 # if PSSM file provided, skip running blast
 if ( &nonempty_file_exists("$options{pssm}") ) {
-  $options{runid}.pssm = $options{pssm};
+  system("cp $options{pssm} $options{runid}.pssm");
 }
 
 # run blast
