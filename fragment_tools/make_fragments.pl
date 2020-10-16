@@ -35,9 +35,6 @@ my $FRAGMENT_PICKER_NUM_CPUS = int($ENV{"FRAGMENT_PICKER_NUM_CPUS"}) || 8;    # 
 my $ROSETTA_DATABASE = $ENV{"ROSETTA_DATABASE"} || "$Bin/../../main/database"; # rosetta database
 my $VALL = $ENV{"VALL"} || "$Bin/vall.jul19.2011"; # template database
 
-# If provided, skip BLAST
-my $PSSM = $ENV{"PSSM"} || "";
-
 # BLAST path (Requires non-blast+ NCBI version)
 my $BLAST_DIR = $ENV{"BLAST_DIR"} || "$Bin/blast";
 my $BLAST_NUM_CPUS = int($ENV{"BLAST_NUM_CPUS"}) || 8;    # number of processors to use (blastpgp -a option)
