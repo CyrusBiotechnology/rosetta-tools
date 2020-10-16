@@ -430,7 +430,9 @@ if ($options{csbuild_profile}) {
   }
   close(F);
 
-  unless ( &nonempty_file_exists( $options{fastafile}.pssm ) ) {
+  if ( &nonempty_file_exists( $options{pssm} ) ) {
+    system("cp $options{pssm} $options{runid}.pssm");
+  } else {
       system("$PSIBLAST -i $options{fastafile} -B $blast -Q $options{runid}.pssm -t 1 -j 1 -h 0.001 -e 0.001 -b 0 -k 0 -d $placeholder");
       (-s "$options{runid}.pssm") or die "ERROR! failed to create single sequence pssm file: blastpgp failed!\n";
   }
