@@ -377,8 +377,8 @@ print "picking fragments with options:\n", options_to_str( \%options ), "\n";
 print_debug("FILENAME: $options{fastafile}");
 
 # if PSSM file provided, skip running blast
-if ( &nonempty_file_exists("$options{pssm}" ) {
-  $options{runid}.pssm = $options{pssm}
+if ( &nonempty_file_exists("$options{pssm}") ) {
+  $options{runid}.pssm = $options{pssm};
 }
 
 # main
@@ -455,8 +455,8 @@ if ($SPARKS) {
 }
 
 # if PSSM file provided, skip running blast
-if ( &nonempty_file_exists("$options{pssm}" ) {
-  $options{runid}.pssm = $options{pssm}
+if ( &nonempty_file_exists("$options{pssm}") ) {
+  $options{runid}.pssm = $options{pssm};
 }
 
 # run blast
