@@ -1242,6 +1242,7 @@ sub getCommandLineOptions {
 		\t-n_candidates <number of candidates>
 		\t-nofrags specify to not make fragments but run everything else
 		\t-old_name_format  use old name format e.g. aa1tum_05.200_v1_3
+    \t-pssm  path to pssm file
 		\t<fasta file>
 	};
     $usage = "$usage\n\n" . join ' ', ( 'Version:', VERSION, "\n" );
@@ -1259,7 +1260,7 @@ sub getCommandLineOptions {
         "n_frags=i",        "n_candidates=i",
         "add_vall_files=s", "use_vall_files=s",
         "torsion_bin=s",    "exclude_homologs_by_pdb_date=s",
-        "old_name_format!", "add_pdbs_to_vall=s"
+        "old_name_format!", "add_pdbs_to_vall=s", "pssm=s"
     );
 
     if ( scalar(@ARGV) != 1 ) {
