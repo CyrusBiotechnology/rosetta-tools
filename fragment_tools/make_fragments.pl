@@ -478,7 +478,7 @@ unless ( &nonempty_file_exists("$options{runid}.check") || &nonempty_file_exists
     }
 }
 
-unless ( &nonempty_file_exists("$options{runid}.checkpoint") || &nonempty_file_exists("$options{pssm}") ) {
+unless ( &nonempty_file_exists("$options{runid}.checkpoint") ) {
 
     # parse & fortran-ify the checkpoint matrix.
     my @checkpoint_matrix;
