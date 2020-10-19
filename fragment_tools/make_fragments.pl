@@ -455,7 +455,7 @@ if ($SPARKS) {
 }
 
 # if PSSM file provided, skip running blast
-if ( &nonempty_file_exists("$options{pssm}") && &nonempty_file_exists("$options{checkpoint}")) ) {
+if ( &nonempty_file_exists("$options{pssm}") && &nonempty_file_exists("$options{checkpoint}") ) {
   system("cp $options{pssm} $options{runid}.pssm");
   system("cp $options{checkpoint} $options{runid}.check");
 }
