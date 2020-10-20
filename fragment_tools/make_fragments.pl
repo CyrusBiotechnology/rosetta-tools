@@ -123,6 +123,8 @@ $options{csbuild_profile} = 0;
 $options{psipredfile} = "";
 $options{samfile}     = "";
 $options{porterfile}  = "";
+$options{pssm}        = "";
+$options{checkpoint}  = "";
 $options{psipred}     = 1;         # use psipred by default
 $options{porter}      = 0;         # skip porter by default
 $options{sam}         = 0;         # skip sam by default
@@ -368,6 +370,11 @@ if ( $abs_path_fasta ne abs_path("$options{rundir}/$options{fastafile}") ) {
 print "picking fragments with options:\n", options_to_str( \%options ), "\n";
 print_debug("FILENAME: $options{fastafile}");
 
+# if PSSM file provided, skip running blast
+if ( &nonempty_file_exists("$options{pssm}") ) {
+  system("cp $options{pssm} $options{runid}.pssm");
+}
+
 # main
 
 chdir( $options{rundir} );
@@ -417,8 +424,13 @@ if ($options{csbuild_profile}) {
   }
   close(F);
 
-  system("$PSIBLAST -i $options{fastafile} -B $blast -Q $options{runid}.pssm -t 1 -j 1 -h 0.001 -e 0.001 -b 0 -k 0 -d $placeholder");
-  (-s "$options{runid}.pssm") or die "ERROR! failed to create single sequence pssm file: blastpgp failed!\n";
+  if ( &nonempty_file_exists( $options{pssm} ) ) {
+    system("cp $options{pssm} $options{runid}.pssm");
+  } else {
+      system("$PSIBLAST -i $options{fastafile} -B $blast -Q $options{runid}.pssm -t 1 -j 1 -h 0.001 -e 0.001 -b 0 -k 0 -d $placeholder");
+      (-s "$options{runid}.pssm") or die "ERROR! failed to create single sequence pssm file: blastpgp failed!\n";
+  }
+
   system("cp $options{runid}.pssm $options{fastafile}.pssm");
 }
 
@@ -438,8 +450,14 @@ if ($SPARKS) {
     }
 }
 
+# if PSSM file provided, skip running blast
+if ( &nonempty_file_exists("$options{pssm}") && &nonempty_file_exists("$options{checkpoint}") ) {
+  system("cp $options{pssm} $options{runid}.pssm");
+  system("cp $options{checkpoint} $options{runid}.check");
+}
+
 # run blast
-unless ( &nonempty_file_exists("$options{runid}.check") ) {
+unless ( &nonempty_file_exists("$options{runid}.check") && &nonempty_file_exists("$options{pssm}") ) {
     print_debug("Running psiblast for sequence profile");
     print_debug("Using nr: $NR");
     if (
@@ -1219,6 +1237,8 @@ sub getCommandLineOptions {
 		\t-n_candidates <number of candidates>
 		\t-nofrags specify to not make fragments but run everything else
 		\t-old_name_format  use old name format e.g. aa1tum_05.200_v1_3
+    \t-pssm  path to pssm file
+    \t-checkpoint  path to checkpoint file
 		\t<fasta file>
 	};
     $usage = "$usage\n\n" . join ' ', ( 'Version:', VERSION, "\n" );
@@ -1236,7 +1256,8 @@ sub getCommandLineOptions {
         "n_frags=i",        "n_candidates=i",
         "add_vall_files=s", "use_vall_files=s",
         "torsion_bin=s",    "exclude_homologs_by_pdb_date=s",
-        "old_name_format!", "add_pdbs_to_vall=s"
+        "old_name_format!", "add_pdbs_to_vall=s",
+        "pssm=s", "checkpoint=s"
     );
 
     if ( scalar(@ARGV) != 1 ) {
