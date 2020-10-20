@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
 import string
 from os.path import exists,basename
 from parse_tag import parse_tag
 
 
-hetatm_map = { '5BU':'  U', ' MG':' MG', 'OMC':'  C', '5MC':'  C', 'CCC':'  C', ' DC':'  C', 'CBR':'  C', 'CBV':'  C', 'CB2':'  C', '2MG':'  G', 'H2U':'H2U', 'PSU':'PSU', '5MU':'  U', 'OMG':'  G', '7MG':'  G', '1MG':'  G', 'GTP':'  G', 'AMP':'  A', ' YG':'  G', '1MA':'  A', 'M2G':'  G', 'YYG':'  G', ' DG':'  G', 'G46':'  G', ' IC':' IC',' IG':' IG', 'ZMP':'ZMP' }
+hetatm_map = { '5BU':'  U', ' MG':' MG', 'OMC':'  C', '5MC':'  C', 'CCC':'  C', ' DC':'  C', 'CBR':'  C', 'CBV':'  C', 'CB2':'  C', '2MG':'  G', 'H2U':'H2U', 'PSU':'PSU', '5MU':'  U', 'OMG':'  G', '7MG':'  G', '1MG':'  G', 'GTP':'  G', 'AMP':'  A', ' YG':'  G', '1MA':'  A', 'M2G':'  G', 'YYG':'  G', ' DG':'  G', 'G46':'  G', ' IC':' IC',' IG':' IG', 'ZMP':'ZMP', 'YYG':'  G', '2MG':'  G','H2U':'  U' }
 
 longer_names={'ALA': 'A', 'ARG': 'R', 'ASN': 'N', 'ASP': 'D',
               'CYS': 'C', 'GLU': 'E', 'GLN': 'Q', 'GLY': 'G',
@@ -17,8 +18,7 @@ longer_names={'ALA': 'A', 'ARG': 'R', 'ASN': 'N', 'ASP': 'D',
               ' MG': 'Z[MG]',' IC':'c[ICY]',' IG':'g[IGU]',
               'ROS': 'Z[ROS]','HOH':'w[HOH]', 'H2U': 'X[H2U]',
               'PSU': 'X[PSU]', '5MU': 'X[5MU]', 'FME': 'X[FME]',
-	      'U33': 'X[U33]', '  I': 'X[INO]', 'BRU': 'X[5BU]',
-              }
+	      'U33': 'X[U33]', '  I': 'X[INO]', 'BRU': 'X[5BU]' }
 
 from subprocess import Popen, PIPE
 import os
@@ -26,7 +26,7 @@ grep = Popen( ["grep", "-r", "IO_STRING", "%s/main/database/chemical/residue_typ
 awk = Popen( ["awk", "{print $2}"], stdin=grep.stdout, stdout=PIPE )
 grep.stdout.close()
 tlcs, err = awk.communicate()
-for tlc in tlcs.split('\n'):
+for tlc in tlcs.decode('iso-8859-15').split('\n'):
     longer_names[tlc] = "X[%s]" % tlc
 
 def get_sequences( pdbname, removechain = 0 ):
@@ -89,7 +89,7 @@ def get_sequences( pdbname, removechain = 0 ):
         if (not (resnum == oldresnum and chain == oldchain )):#and segid == oldsegid ) ):
             count = count + 1
             longname = line_edit[17:20]
-            if longer_names.has_key(longname):
+            if longname in longer_names.keys():
                 sequence +=  longer_names[longname]
             else:
                 sequence +=  'X'
@@ -145,4 +145,4 @@ if __name__=='__main__':
     args=parser.parse_args()
 
     ( sequences, all_chains, all_resnums, all_segids ) = get_sequences( args.pdbname, removechain = args.removechain )
-    print string.join(sequences, '')
+    print(''.join(sequences))
