@@ -1,0 +1,18 @@
+---
+kind: pipeline
+type: kubernetes
+name: default
+
+steps:
+- name: publish
+  image: gcr.io/cyrus-containers/drone-plugins/gcr:linux-amd64
+  privileged: true
+  settings:
+    repo: cyrus-containers/rosetta-tools
+    tags.normalize: true
+    tags:
+    - ${DRONE_COMMIT_BRANCH}
+    - ${DRONE_COMMIT_BRANCH}-${DRONE_COMMIT_SHA}
+    debug: true
+    json_key:
+      from_secret: dockerconfigjson
