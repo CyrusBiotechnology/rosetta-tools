@@ -85,7 +85,7 @@ chdir($Bin);
 # from http://bioinfadmin.cs.ucl.ac.uk/downloads/psipred/psipred3.3.tar.gz
 if ($overwrite || !-d "$Bin/psipred/bin" || !-d "$Bin/psipred/data") {
 	my $package = "psipred3.3.tar.gz";
-	my $url = "http://bioinfadmin.cs.ucl.ac.uk/downloads/psipred/$package";
+	my $url = "http://bioinfadmin.cs.ucl.ac.uk/downloads/psipred/old_versions/$package";
 	print "INSTALLING PSIPRED from $url ....\n";
 	system("rm -rf $Bin/psipred") if (-d "$Bin/psipred"); # clean up interrupted attempts
 	(mkdir("$Bin/psipred")) or die "ERROR! cannot mkdir $Bin/psipred: $!\n";
@@ -168,7 +168,9 @@ if ($overwrite || !-d "$Bin/sparks-x/bin" || !-d "$Bin/sparks-x/data") {
 	my $url = "http://sparks-lab.org/pmwiki/download/yueyang/SPARKS-X/$package";
 	print "INSTALLING SPARKS-X from $url ....\n";
 	system("rm -rf sparks-x") if (-d "sparks-x"); # clean up interrupted attempts
-	system("wget -N $url");
+	if (!-e $package) {
+		system("wget -N $url");
+	}
 	system("tar -zxvf $package");
 	push(@packages_to_clean, "$Bin/$package");
 	# update paths to sparks-x directory in sparks-x scripts
