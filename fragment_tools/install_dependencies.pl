@@ -1,6 +1,7 @@
 #!/usr/bin/perl -w
 use strict;
 use FindBin qw( $Bin );
+use Env;
 $| = 1; # disable stdout buffering
 
 my $installtype = "";
@@ -8,11 +9,12 @@ foreach my $arg (@ARGV) {
 	if ($arg =~ /^(standard|overwrite)\s*$/) {
 		$installtype = $1;
 	}
-	if ($arg !~ /^(standard|overwrite|nr|uniref90|uniref50|skip_nr)\s*$/) {
-		$installtype = "";
-		last;
-	}
+	# if ($arg !~ /^(standard|overwrite|nr|uniref90|uniref50|skip_nr)\s*$/) {
+	# 	$installtype = "";
+	# 	last;
+	# }
 }
+
 if (!$installtype) {
 	print "\n";
 	print "USAGE: $0 <standard|overwrite> [nr(default)|uniref90|uniref50|skip_nr]\n\n";
@@ -48,6 +50,8 @@ foreach my $arg (@ARGV) {
 	if ($arg =~ /^(uniref90|uniref50)\s*$/) { $database = $1; }
 }
 
+my $artifactory_username=$ARGV[-2];
+my $artifactory_password=$ARGV[-1];
 chdir($Bin);
 
 # blast binaries
@@ -165,11 +169,12 @@ chdir($Bin);
 # from http://sparks-lab.org/pmwiki/download/yueyang/SPARKS-X/sparksx-1.tgz
 if ($overwrite || !-d "$Bin/sparks-x/bin" || !-d "$Bin/sparks-x/data") {
 	my $package = "sparksx-1.tgz";
-	my $url = "http://sparks-lab.org/pmwiki/download/yueyang/SPARKS-X/$package";
+	my $url = "https://cyrusbio.jfrog.io/artifactory/science/$package";
 	print "INSTALLING SPARKS-X from $url ....\n";
 	system("rm -rf sparks-x") if (-d "sparks-x"); # clean up interrupted attempts
 	if (!-e $package) {
-		system("wget -N $url");
+
+		system("wget -N --user $artifactory_username --password $artifactory_password $url");
 	}
 	system("tar -zxvf $package");
 	push(@packages_to_clean, "$Bin/$package");
