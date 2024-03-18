@@ -1,13 +1,23 @@
+
 from __future__ import print_function
-import fork_manager
-import blargs
-import beautifier
+
+from python_cc_reader.utility import fork_manager
+from python_cc_reader.external.blargs import blargs
+from python_cc_reader.beauty import beautifier
 import re
 import sys, os
 
-from code_utilities import *
+from python_cc_reader.cpp_parser.code_utilities import *
 
-# This script is meant to be run from either the Rosetta/main/source/src/ or 
+# Files which should not be beautified.
+EXCLUSION_LIST = [
+# INTERACTIVE BEGIN
+    "src/interactive/external/unzip.cc",
+    "src/interactive/external/zip.cc",
+# INTERACTIVE END
+]
+
+# This script is meant to be run from either the Rosetta/main/source/src/ or
 # the Rosetta/main/source/test/ directories. It reads the scons .settings
 # files to determine what files are compiled, and then runs the beautifier
 # on all of them.  By default, the script does NOT modify the input files, but
@@ -62,6 +72,13 @@ class FileBeautifierManager :
 
 # from inclusion_equivalence_sets import *
 
+def in_exclusion_list(fname):
+    # fname should be absolute path -- we can look for the name of the file as a trailing entry.
+    for entry in EXCLUSION_LIST:
+        if fname.endswith( entry ):
+            return True
+    return False
+
 class Dummy :
     pass
 
@@ -73,13 +90,13 @@ def files_to_beautify() :
         return files_in_src_to_beautify()
     elif lastdir == "test" :
         return files_in_test_to_beautify()
-    
+
 
 def files_in_src_to_beautify() :
     includes = scan_compilable_files()
-    all_files = includes.keys()
+    all_files = list(includes.keys())
 
-    all_files = filter( lambda x : x.partition("/")[0] != "ObjexxFCL", all_files )
+    all_files = [x for x in all_files if x.partition("/")[0] != "ObjexxFCL"]
     all_files.remove( "protocols/noesy_assign/PeakAssignmentOptionKeys.hh" ) # this one doesn't beautify
     return all_files
 
@@ -111,6 +128,9 @@ def beautify_files_in_parallel( file_list, overwrite, num_cpu, pound_if_setting 
         opts.pound_if_setting = pound_if_setting
 
     for fname in file_list :
+        if in_exclusion_list( fname ):
+            print("Skipping beautification of", fname, "as it's in the exclusion list")
+            continue
         pid = fm.mfork()
         if pid == 0 :
             # print("beautifying", fname)

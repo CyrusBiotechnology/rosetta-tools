@@ -17,7 +17,7 @@ foreach my $arg (@ARGV) {
 
 if (!$installtype) {
 	print "\n";
-	print "USAGE: $0 <standard|overwrite> [nr(default)|uniref90|uniref50|skip_nr]\n\n";
+	print "USAGE: $0 <standard|overwrite> [nr(default)|uniref90|uniref50|skip_nr|localnrcopy]\n\n";
 	print "This script installs blast, psipred, csblast, sparks-x, and the NCBI non-redundant (nr) database.\n";
 	print "<standard> will only install what is missing.\n";
 	print "<overwrite> will do a fresh installation.\n";
@@ -47,7 +47,15 @@ my $skip_nr = 0;
 my $database = "nr";
 foreach my $arg (@ARGV) {
 	$skip_nr = 1 if ($arg =~ /^skip_nr\s*$/);
-	if ($arg =~ /^(uniref90|uniref50)\s*$/) { $database = $1; }
+	if ($arg =~ /^(uniref90|uniref50|localnrcopy)\s*$/) { $database = $1; }
+}
+if ($database eq "localnrcopy") {
+	if (!$ENV{'LOCAL_NR_COPY'}) {
+		die "ERROR: CANNOT USE 'localnrcopy' if environment variable 'LOCAL_NR_COPY' is not set!\n";
+	}
+	if (!-d $ENV{'LOCAL_NR_COPY'}) {
+		die "ERROR: CANNOT USE 'localnrcopy' if environment variable 'LOCAL_NR_COPY' is not a real dir: $ENV{'LOCAL_NR_COPY'}\n";
+	}
 }
 
 my $artifactory_username=$ARGV[-2];
@@ -132,20 +140,21 @@ if ($overwrite || !-d "$Bin/csblast/bin") {
 	chdir("$Bin/csblast/");
 	system("wget -N $url");
 	system("tar -zxvf $package");
-  my $sph_package = "sparsehash-2.0.3.tar.gz";
+  my $sph_package = "sparsehash-2.0.4.tar.gz";
   system("wget -N https://github.com/sparsehash/sparsehash/archive/$sph_package");
 	system("tar -zxvf $sph_package");
 	push(@packages_to_clean, "$Bin/csblast/$package", "$Bin/csblast/$sph_package");
 
-	chdir("$Bin/csblast/sparsehash-sparsehash-2.0.3");
+	chdir("$Bin/csblast/sparsehash-sparsehash-2.0.4");
   system("./configure --prefix=$Bin/csblast/local");
-	system("make install"); # build from src
+	system("make install -j `nproc`"); # build from src
 
 	chdir("$Bin/csblast");
   system("mv csblast-*/* .");
 	chdir("$Bin/csblast/src");
+  	system( "sed -i 's/FLAGS = \-Wall/FLAGS = \-Wall \-std=c++98/g' Makefile"); # Ensure that newer compilers don't default to C++17 standard, which produces errors.
   system('sed -i -e "s|^INC.*|INC = -I../local/include|" Makefile');
-  system("make csblast csbuild");
+  system("make csblast csbuild -j `nproc`");
 
 	(-d "$Bin/csblast/bin") or die "ERROR! psipred installation failed!\n";
 }
@@ -166,6 +175,7 @@ CSBLASTCREDIT
 chdir($Bin);
 
 # SPARKS-X/SPINE-X
+# from https://apisz.sparks-lab.org:8443/downloads/Resource/Protein/1_Protein_3d_structure_prediction/SPARKS-X.tgz
 # from http://sparks-lab.org/pmwiki/download/yueyang/SPARKS-X/sparksx-1.tgz
 if ($overwrite || !-d "$Bin/sparks-x/bin" || !-d "$Bin/sparks-x/data") {
 	my $package = "sparksx-1.tgz";
@@ -177,6 +187,7 @@ if ($overwrite || !-d "$Bin/sparks-x/bin" || !-d "$Bin/sparks-x/data") {
 		system("wget -N --user $artifactory_username --password $artifactory_password $url");
 	}
 	system("tar -zxvf $package");
+	system("tar -xvzf SPARKS-X/$innerpackage");
 	push(@packages_to_clean, "$Bin/$package");
 	# update paths to sparks-x directory in sparks-x scripts
 	# instead of using the SPARKSXDIR environment variable.
@@ -207,6 +218,10 @@ if ($overwrite || !-d "$Bin/sparks-x/bin" || !-d "$Bin/sparks-x/data") {
 		close(F);
 		close(NF);
 	}
+	system( "patch sparks-x/SPINE-X/bin/buildinp_mat.pl < buildinp_mat.patch" ); 
+	system( "patch sparks-x/bin/buildinp.py < buildinp.patch" ); 
+	system( "sed -i 's/ file(/ open(/g' sparks-x/bin/*.py" );
+	system( "sed -i 's/ xrange(/ range(/g' sparks-x/bin/*.py" );
 	chdir("$Bin/sparks-x");
 	system("ln -sf ../blast ./");
 	system("ln -sf ../databases/ ./blast-NR");
@@ -273,10 +288,18 @@ chdir($Bin);
 if (!$skip_nr && $database eq "nr" && ($overwrite || !-s "$datdir/nr.pal")) {
 	chdir($datdir);
 	print "Fetching NR database from NCBI. Be very patient ......\n";
-	system("wget -N http://www.ncbi.nlm.nih.gov/blast/docs/update_blastdb.pl");
-	die "ERROR! wget http://www.ncbi.nlm.nih.gov/blast/docs/update_blastdb.pl failed.\n" if (!-s "$datdir/update_blastdb.pl");
-	system("rm $datdir/nr*"); # clean up interrupted attempts
-	$SIG{INT} = \&clean_nr_tgz;
+	system("wget ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/2.10.0/ncbi-blast-2.10.0+-src.tar.gz");
+	system("tar -zxf ncbi-blast-2.10.0+-src.tar.gz");
+	system("cp ncbi-blast-2.10.0+-src/c++/src/app/blast/update_blastdb.pl .");
+	die "ERROR! wget ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/2.10.0/ncbi-blast-2.10.0+-src.tar.gz failed.\n" if (!-s "$datdir/update_blastdb.pl");
+	if ( -d "$datdir/nr" ) {
+	        system("rm -rf $datdir/nr*"); # clean up interrupted attempts
+	        $SIG{INT} = \&clean_nr_tgz;
+	}
+	# Sometimes fails randomly, run multiple times (sorry horrible hack)
+	system("perl $datdir/update_blastdb.pl nr");
+	system("perl $datdir/update_blastdb.pl nr");
+	system("perl $datdir/update_blastdb.pl nr");
 	(system("perl $datdir/update_blastdb.pl nr") == 0) or do { &clean_nr_tgz; };
 	$SIG{INT} = \&clean_nr;
 	foreach my $f (glob("$datdir/nr.*tar.gz")) {
@@ -288,6 +311,22 @@ if (!$skip_nr && $database eq "nr" && ($overwrite || !-s "$datdir/nr.pal")) {
 		}
 	}
 	$SIG{INT} = 'DEFAULT';
+	(-s "$datdir/nr.pal") or die "ERROR! $datdir/nr database installation failed!\n";
+}
+chdir($Bin);
+
+if (!$skip_nr && $database eq "localnrcopy" && ($overwrite || !-s "$datdir/nr.pal")) {
+	print "Copying your local nr database to $datdir...\n";
+	my $copy_cmd = "rsync -rav $ENV{'LOCAL_NR_COPY'}/* $datdir";
+	print "$copy_cmd\n";
+	system($copy_cmd);
+	chdir($datdir);
+
+	foreach my $f (glob("$datdir/nr.*tar.gz")) {
+		my $ext_cmd = "tar -zxvf $f";
+		(system($ext_cmd) == 0) or die "Failed to exract with command $ext_cmd";
+	}
+	# Make sure at least one nr.pal file is there
 	(-s "$datdir/nr.pal") or die "ERROR! $datdir/nr database installation failed!\n";
 }
 chdir($Bin);
